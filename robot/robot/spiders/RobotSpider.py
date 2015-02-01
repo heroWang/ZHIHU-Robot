@@ -11,7 +11,7 @@ class RobotSpider(scrapy.Spider):
 		)
 
 	robot_name ="wanghj_1990@126.com"
-	robot_pwd = "623deyingxiong"
+	robot_pwd = "623dxxx"
 	sama_un ='long-min-92'
 
 	last_answer_id = 0
