@@ -14,8 +14,8 @@ class RobotSpider(scrapy.Spider):
 	start_urls =('http://www.zhihu.com',
 		)
 
-	robot_name ="wanghj_1990@126.com"
-	robot_pwd = "623deyingxiong"
+	robot_name ="XXX@126.com"
+	robot_pwd = "***"
 
 
 	sama_last_answer_id_path=curpath+'/last_answer_id'
