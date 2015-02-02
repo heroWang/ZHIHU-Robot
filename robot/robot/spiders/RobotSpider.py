@@ -3,6 +3,9 @@ from scrapy.http import Request
 from scrapy.http.cookies import CookieJar
 from scrapy import log
 import urllib
+from scrapy.conf import settings
+
+curpath=parentdir(os.path.abspath(__file__))
 
 class RobotSpider(scrapy.Spider):
 	name ="robot"
@@ -11,21 +14,19 @@ class RobotSpider(scrapy.Spider):
 		)
 
 	robot_name ="wanghj_1990@126.com"
-	robot_pwd = "623dxxx"
-	sama_un ='long-min-92'
+	robot_pwd = "623"
 
-	last_answer_id = 0
-
-	new_answer_ids=[]
-	currPage = 1
+	last_answer_id = []
 
 	xsrf = ""
-	cookie={}
 
 	def __init__(self):
 		super(RobotSpider,self).__init__()
 
 	def parse(self,response):
+		#settings = Settings()
+		print 'robot name:',settings['robot_name']
+
 		#Login.
 		return scrapy.FormRequest.from_response(
             response,
@@ -35,8 +36,9 @@ class RobotSpider(scrapy.Spider):
 
 	def sama_answer_page(self,response):
 		#TODO if login success.
+
 		#Get sama's Main page.
-		yield Request("http://www.zhihu.com/people/{}/answers".format(self.sama_un),
+		yield Request("http://www.zhihu.com/people/{}/answers".format(sama_un),
                       callback=self.parse_answers_page)
 
 	def parse_answers_page(self,response):
@@ -63,7 +65,7 @@ class RobotSpider(scrapy.Spider):
 			else:
 				#TODO Should be more elegant.
 
-				if len(self.new_answer_ids)>0:
+				if len(new_answer_ids)>0:
 					#Update.
 					self.last_answer_id = self.new_answer_ids
 
@@ -73,28 +75,28 @@ class RobotSpider(scrapy.Spider):
 					for new_answer_id in self.new_answer_ids:
 						print 'answer_id ',new_answer_id
 
-						body_param = [
-													'method='+'vote_up',
-													'params='+urllib.quote('{"answer_id":"%s"}' % new_answer_id),
-													'_xsrf='+self.xsrf]
+						body_param = ['method='+'vote_up','params='+urllib.quote('{"answer_id":"%s"}' % new_answer_id),'_xsrf='+self.xsrf]
 						body = '&'.join(body_param)
 
 						#Upvote.
-						yield Request("http://www.zhihu.com/node/AnswerVoteBarV2",method='POST',
-	                  body=body,
-	                  headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36',
-	                  'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
-	                  'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
-	                  'Origin': 'http://www.zhihu.com',
-	                  'X-Requested-With':'XMLHttpRequest',
-	                  'Accept': '*/*'
-										},
-	                  callback=self.after_serve_answer)
+						yield Request("http://www.zhihu.com/node/AnswerVoteBarV2",
+							method='POST',
+			                body=body,
+			                headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36',
+			                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
+			                'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+			                'Origin': 'http://www.zhihu.com',
+			                'X-Requested-With':'XMLHttpRequest',
+			                'Accept': '*/*'}
+			                )
 						#break
 
+	def read_last_answer_id(self):
+		self.last_answer_id=dict(line.strip().split('=') for line in open('last_answer_id'))
 
-	def after_serve_answer(self,response):
-		print response.url
+	def write_last_answer_id(self):
+		with open( 'last_answer_id') as 
+
 
 	def refreshXsrf(self,response):
 		print 'refreshXsrf........................'
