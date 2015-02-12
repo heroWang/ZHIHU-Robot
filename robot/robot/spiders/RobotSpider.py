@@ -1,3 +1,5 @@
+#-*- coding:utf-8 -*-
+
 import  scrapy
 from scrapy.http import Request
 from scrapy.http.cookies import CookieJar
@@ -14,8 +16,8 @@ class RobotSpider(scrapy.Spider):
 	start_urls =('http://www.zhihu.com',
 		)
 
-	robot_name ="XXX@126.com"
-	robot_pwd = "***"
+	robot_name ="xxx@126.com"
+	robot_pwd = "xxx"
 
 
 	sama_last_answer_id_path=curpath+'/last_answer_id'
@@ -85,13 +87,10 @@ class RobotSpider(scrapy.Spider):
 				self.refreshXsrf(response)
 				for new_answer_id in self.temp[sama_un]['new_answer_ids']:
 
-					body_param = ['method='+'vote_up','params='+urllib.quote('{"answer_id":"%s"}' % new_answer_id),'_xsrf='+self.xsrf]
-					body = '&'.join(body_param)
-
 					#Upvote.
 					yield Request("http://www.zhihu.com/node/AnswerVoteBarV2",
 						method='POST',
-		                body=body,
+		                body='&'.join(['method='+'vote_up','params='+urllib.quote('{"answer_id":"%s"}' % new_answer_id),'_xsrf='+self.xsrf]),
 		                headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36',
 		                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
 		                'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
@@ -101,6 +100,47 @@ class RobotSpider(scrapy.Spider):
 		                callback=self.end,
 		                dont_filter=True
 		                )
+
+					#Thanks
+					yield Request("http://www.zhihu.com/answer/thanks",
+						method='POST',
+		                body='&'.join(['aid='+str(new_answer_id),'_xsrf='+self.xsrf]),
+		                headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36',
+		                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
+		                'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+		                'Origin': 'http://www.zhihu.com',
+		                'X-Requested-With':'XMLHttpRequest',
+		                'Accept': '*/*'},
+		                callback=self.end,
+		                dont_filter=True
+		                )
+
+					#Comment.
+					yield Request("http://meiriyiwen.com/random?new_answer_id="+str(new_answer_id),	
+						method='GET',
+		                callback=self.comment,
+		                dont_filter=True
+		                )
+
+	def comment(self,response):
+		title = response.xpath('/html/body/div[@id="article_show"]/h1/text()')[0].extract()
+		first_p = response.xpath("/html/body/div[@id='article_show']/div[@class='article_text']/p[1]/text()")[0].extract()
+		new_answer_id = response.url.split('=')[-1]
+
+		comment = '《{title}》<br>{first_p}'.format(title=title,first_p=first_p[0:-1]).encode('utf-8')
+		#Comment.
+		yield Request("http://www.zhihu.com/node/AnswerCommentAddV2",
+			method='POST',
+            body='&'.join(['method='+'add_comment','params='+urllib.quote('{"answer_id":"%s","content":"%s"}' % (new_answer_id,comment)),'_xsrf='+self.xsrf]),
+            headers={'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.93 Safari/537.36',
+            'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+            'Origin': 'http://www.zhihu.com',
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept': '*/*'},
+            callback=self.end,
+            dont_filter=True
+            )
 
 	def end(self,response):
 		print 'serve answer success....'
